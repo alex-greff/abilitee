@@ -1,23 +1,11 @@
 type UserType = "user" | "admin" | "manager";
 
 export class User {
-  name: string;
-  type: UserType;
-
-  constructor(name: string, type: UserType = "user") {
-    this.name = name;
-    this.type = type;
-  }
+  constructor(public name: string, public type: UserType = "user") {}
 }
 
 export class Product {
-  seller: User;
-  isPublic: boolean;
-
-  constructor(seller: User, isPublic: boolean = true) {
-    this.seller = seller;
-    this.isPublic = isPublic;
-  }
+  constructor(public seller: User, public isPublic: boolean = true) {}
 } 
 
 export type Subjects =

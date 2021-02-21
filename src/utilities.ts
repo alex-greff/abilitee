@@ -47,9 +47,9 @@ export function isConstructor(func: any) {
  */
 export const toConditionFunction = <M, T>(
   condition: ConditionInputType<M, T> | undefined
-) => {
+): ConditionFn<M, T> => {
   const conditionFn = isObject(condition)
-    ? createConditionFn<M, T>(condition)
-    : condition;
+    ? createConditionFn<M, T>(condition as TargetPartial<T>)
+    : condition as ConditionFn<M, T>;
   return conditionFn;
 };
