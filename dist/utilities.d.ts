@@ -6,4 +6,4 @@ export declare function isConstructor(func: any): boolean;
 /**
  * Converts a condition input to a condition function.
  */
-export declare const toConditionFunction: <M, T>(condition: ConditionFn<M, T> | Partial<T> | undefined) => ConditionFn<M, T> | undefined;
+export declare const toConditionFunction: <M, T>(condition: ConditionFn<M, T> | Partial<T> | undefined) => ConditionFn<M, T>;
