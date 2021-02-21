@@ -7,6 +7,10 @@
   "files": [
     "dist"
   ],
+  "keywords": [
+    "acl",
+    "authorization"
+  ],
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "npx jest",
