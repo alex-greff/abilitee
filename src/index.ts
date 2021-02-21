@@ -40,7 +40,10 @@ ability.allow(User, "delete", User, (a, b) => {
 
 ability.allow(User, "read", Product, { public: true });
 
-ability.allow(User, "update", "all");
+// ability.allow(User, "update", "$all");
+
+// console.log(ability.can(user1, "read", Product));
+console.log(ability.can(user1, "read", product1));
 
 type Test = ConstructorTypeOf<User>;
 const temp: Test = User;
