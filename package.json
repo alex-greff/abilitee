@@ -1,0 +1,29 @@
+{
+  "name": "abilities",
+  "version": "1.0.0",
+  "description": "Simple ability definition library.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "start:dev": "tsnd --respawn src/index.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alex-greff/abilities.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alex-greff/abilities/issues"
+  },
+  "homepage": "https://github.com/alex-greff/abilities#readme",
+  "devDependencies": {
+    "ts-node-dev": "^1.1.1",
+    "typescript": "^4.1.5"
+  },
+  "dependencies": {
+    "arrify": "^2.0.1",
+    "is-plain-obj": "^3.0.0"
+  }
+}
