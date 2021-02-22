@@ -1,4 +1,4 @@
-# Abilities
+# Abilitee
 
 A simple ability definition library that allows for complex rules to be
 expressed simply. Inspired by [CanCan](https://www.npmjs.com/package/cancan)
