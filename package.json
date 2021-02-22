@@ -1,5 +1,5 @@
 {
-  "name": "abilities",
+  "name": "abilitee",
   "version": "1.0.0",
   "description": "Simple ability definition library.",
   "main": "dist/index.js",
@@ -19,14 +19,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/alex-greff/abilities.git"
+    "url": "git+https://github.com/alex-greff/abilitee.git"
   },
-  "author": "",
+  "author": "Alexander Greff",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/alex-greff/abilities/issues"
+    "url": "https://github.com/alex-greff/abilitee/issues"
   },
-  "homepage": "https://github.com/alex-greff/abilities#readme",
+  "homepage": "https://github.com/alex-greff/abilitee#readme",
   "devDependencies": {
     "@types/jest": "^26.0.20",
     "jest": "^26.6.3",
