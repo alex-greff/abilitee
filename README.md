@@ -7,13 +7,13 @@ expressed simply. Inspired by [CanCan](https://www.npmjs.com/package/cancan)
 ## Installation
 
 ```
-npm install <TODO: package name here>
+npm install abilitee
 ```
 
 ## Usage
 
 ```TypeScript
-import { Ability, Or } from "<TODO: package name here>";
+import { Ability, Or } from "abilitee";
 
 // --- Define types ---
 
