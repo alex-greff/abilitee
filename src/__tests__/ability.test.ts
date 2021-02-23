@@ -2,37 +2,37 @@ import { Ability } from "../ability";
 import { And, Not, Or } from "../conditions";
 import { Actions, Product, Subjects, User } from "./mockTypes";
 
-const createAbilityForUser = (user: User) => {
-  const ability = new Ability<Subjects, Actions>();
+test("Basic ability conditions", () => {
+  const createAbilityForUser = (user: User) => {
+    const ability = new Ability<Subjects, Actions>();
 
-  ability.allow(User, "read", User);
-  ability.allow(User, "update", User, (performer, target) => {
-    return performer.name === target.name;
-  });
-  ability.allow(User, "delete", User, (performer, target) => {
-    return performer.name === target.name;
-  });
+    ability.allow(User, "read", User);
+    ability.allow(User, "update", User, (performer, target) => {
+      return performer.name === target.name;
+    });
+    ability.allow(User, "delete", User, (performer, target) => {
+      return performer.name === target.name;
+    });
 
-  ability.allow(User, "create", Product);
-  ability.allow(User, "read", Product, { isPublic: true });
-  ability.allow(User, ["update", "delete"], Product, (user, product) => {
-    return user.name === product.seller.name;
-  });
+    ability.allow(User, "create", Product);
+    ability.allow(User, "read", Product, { isPublic: true });
+    ability.allow(User, ["update", "delete"], Product, (user, product) => {
+      return user.name === product.seller.name;
+    });
 
-  // Admin can manage everything
-  if (user.type === "admin") {
-    ability.allow(User, "$manage", "$all");
-  }
+    // Admin can manage everything
+    if (user.type === "admin") {
+      ability.allow(User, "$manage", "$all");
+    }
 
-  // Manager can manage everything with products
-  if (user.type === "manager") {
-    ability.allow(User, "$manage", Product);
-  }
+    // Manager can manage everything with products
+    if (user.type === "manager") {
+      ability.allow(User, "$manage", Product);
+    }
 
-  return ability;
-};
+    return ability;
+  };
 
-test("basic", () => {
   const admin = new User("Admin", "admin");
   const manager = new User("Manager", "manager");
   const userA = new User("A");
@@ -200,7 +200,67 @@ test("basic", () => {
   expect(userBAbility.can(userB, "delete", product3)).toBe(true);
 });
 
-test("Complex conditions", () => {
+test("Basic inability conditions", () => {
+  const createAbilityForUser = (user: User) => {
+    const ability = new Ability<Subjects, Actions>();
+
+    // Users can view any user
+    ability.allow(User, "read", User);
+    // User can update and delete self
+    ability.allow(User, ["update", "delete"], User, (performer, target) => {
+      return performer.name === target.name;
+    });
+    // User cannot update own role
+    ability.disallow(User, "update", User, (performer, target) => {
+      return performer.type !== target.type;
+    });
+
+    // Admin can manage everything
+    if (user.type === "admin") {
+      ability.allow(User, "$manage", "$all");
+    }
+
+    return ability;
+  };
+
+  const admin = new User("Admin", "admin");
+  const userA = new User("A");
+  const userB = new User("B");
+
+  const adminAbility = createAbilityForUser(admin);
+  const userAAbility = createAbilityForUser(userA);
+  const userBAbility = createAbilityForUser(userB);
+
+  const userANew = new User("A", "admin");
+
+  // User A tries to upgrade themself to admin
+  expect(userAAbility.can(userA, "update", userANew)).toBe(false);
+  expect(userBAbility.can(userB, "update", userANew)).toBe(false);
+  expect(adminAbility.can(admin, "update", userANew)).toBe(true);
+});
+
+test("Object condition", () => {
+  const createAbilityForUser = (user: User) => {
+    const ability = new Ability<Subjects, Actions>();
+
+    ability.allow(User, "update", User, { name: user.name });
+
+    return ability;
+  };
+
+  const userA = new User("A");
+  const userB = new User("B");
+
+  const userAAbility = createAbilityForUser(userA);
+  const userBAbility = createAbilityForUser(userB);
+
+  expect(userAAbility.can(userA, "update", userA)).toBe(true);
+  expect(userAAbility.can(userA, "update", userB)).toBe(false);
+  expect(userBAbility.can(userB, "update", userA)).toBe(false);
+  expect(userBAbility.can(userB, "update", userB)).toBe(true);
+});
+
+test("Chain conditions", () => {
   const ability = new Ability<Subjects, Actions>();
   ability.allow(
     User,
@@ -252,7 +312,7 @@ test("Condition joining functions", () => {
   const not1 = Not<User, User>({ name: "A" });
   const not2 = Not<User, User>((user1, user2) => user1.name === user2.name);
 
-  const nested1 = And<User, User>({ name: "A"}, not2);
+  const nested1 = And<User, User>({ name: "A" }, not2);
 
   const userA = new User("A");
   const userB = new User("B");

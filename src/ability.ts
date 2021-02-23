@@ -24,6 +24,7 @@ const defaultInstanceOfFn = (instance: any, model: any) =>
 
 export class Ability<S extends BaseSubjects, A extends BaseActions> {
   private abilities: AbilityItem<S, A, S>[] = [];
+  private inabilities: AbilityItem<S, A, S>[] = [];
   private instanceOf: InstanceOfFn<S, S>;
 
   constructor(options?: Partial<AbilityOptions<S, A>>) {
@@ -53,13 +54,37 @@ export class Ability<S extends BaseSubjects, A extends BaseActions> {
     });
   }
 
-  can<P extends S, T extends S>(
+  disallow<M extends S, T extends S>(
+    model: ModelInputType<M>,
+    actions: ActionInputType<A> | ManageKey,
+    targets: TargetInputType<T> | AllKey,
+    condition?: ConditionInputType<M, T>
+  ) {
+    const conditionFn = Utilities.toConditionFunction(condition);
+
+    const actionsArr = Array.isArray(actions) ? actions : [actions];
+    const targetsArr = Array.isArray(targets) ? targets : [targets];
+
+    actionsArr.forEach((action) => {
+      targetsArr.forEach((target) => {
+        this.inabilities.push({
+          model,
+          action,
+          target,
+          condition: conditionFn as ConditionFn<S, S> | undefined,
+        });
+      });
+    });
+  }
+
+  private filterAbilityList<P extends S, T extends S>(
+    abilityList: AbilityItem<S, A, S>[],
     performer: P,
     action: ActionInputType<A>,
     target: T | ConstructorTypeOf<T>
   ) {
     return (
-      this.abilities
+      abilityList
         // Check performer is instance of the model
         .filter((ability) => this.instanceOf(performer, ability.model))
         // Check the target matches or target is the right instance
@@ -84,8 +109,23 @@ export class Ability<S extends BaseSubjects, A extends BaseActions> {
           else if (ability.condition)
             return ability.condition(performer, target as T);
           return true;
-        }).length > 0
+        })
     );
+  }
+
+  can<P extends S, T extends S>(
+    performer: P,
+    action: ActionInputType<A>,
+    target: T | ConstructorTypeOf<T>
+  ) {
+    const hasMatchingAbilities =
+      this.filterAbilityList(this.abilities, performer, action, target).length >
+      0;
+    const hasMatchingInabilities =
+      this.filterAbilityList(this.inabilities, performer, action, target)
+        .length > 0;
+
+    return hasMatchingAbilities && !hasMatchingInabilities;
   }
 
   cannot<P extends S, T extends S>(
