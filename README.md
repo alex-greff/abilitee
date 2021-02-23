@@ -160,7 +160,7 @@ adminAbility.can(admin, "update", userANew); // => true
         * `model: Class`
         * `action: string | string[]`
         * `target: Class`
-        * `condition: ConditionFunction or Partial<target>`
+        * `condition: ConditionFunction or DeepPartial<target>`
     * `disallow(model, action, target, condition?): void`
       * Description: Sets up a disallow relation between `model`, `action`, 
       and `target`. You can think of it as "`<model>` cannot `<action>` `<target>`"
@@ -168,7 +168,7 @@ adminAbility.can(admin, "update", userANew); // => true
         * `model: Class`
         * `action: string | string[]`
         * `target: Class`
-        * `condition: ConditionFunction or Partial<target>`
+        * `condition: ConditionFunction or DeepPartial<target>`
     * `can(performer, action, target): boolean`
       * Description: Returns true if the given relation between `model`, 
       `action` and `target` is allowed.

@@ -1,5 +1,10 @@
 import isObject from "is-plain-obj";
-import { ConditionFn, ConditionInputType, TargetPartial } from "./types";
+import {
+  ConditionFn,
+  ConditionInputType,
+  DeepPartial,
+  TargetPartial,
+} from "./types";
 
 /**
  * Gets a parameter on `obj`, if it is a function it evaluates it.
@@ -10,15 +15,28 @@ const get = (obj: { [k: string]: any }, key: any) => {
 };
 
 /**
- * Returns true if the `partial` object is partially equal to the `target` 
- * object (i.e. every key in `partial` exists on `target` and are equal to 
- * each other).
+ * Returns true if the `partial` object is partially equal to the `target`
+ * object (i.e. every key in `partial` exists on `target` and are equal to
+ * each other). Does a deep search of the object if deep is enabled.
  */
 const isPartiallyEqual = <T extends { [k: string]: any }>(
   target: T,
-  partial: Partial<T>
-) => {
-  return Object.keys(partial).every((key) => get(target, key) === partial[key]);
+  partial: DeepPartial<T>,
+  deep = true
+): boolean => {
+  if (!deep)
+    return Object.keys(partial).every(
+      (key) => get(target, key) === partial[key]
+    );
+
+  return Object.keys(partial).every((key) => {
+    const targetVal = get(target, key);
+    if (targetVal !== undefined && isObject(partial[key])) {
+      return isPartiallyEqual(targetVal, partial[key]!);
+    }
+
+    return targetVal === partial[key];
+  });
 };
 
 /**
@@ -27,7 +45,7 @@ const isPartiallyEqual = <T extends { [k: string]: any }>(
 const createConditionFn = <M, T>(
   partial: TargetPartial<T>
 ): ConditionFn<M, T> => {
-  return (performer: M, target: T) => isPartiallyEqual(target, partial);
+  return (performer: M, target: T) => isPartiallyEqual(target, partial, true);
 };
 
 /**
@@ -50,6 +68,6 @@ export const toConditionFunction = <M, T>(
 ): ConditionFn<M, T> => {
   const conditionFn = isObject(condition)
     ? createConditionFn<M, T>(condition as TargetPartial<T>)
-    : condition as ConditionFn<M, T>;
+    : (condition as ConditionFn<M, T>);
   return conditionFn;
 };

@@ -239,17 +239,21 @@ test("Basic inability conditions", () => {
   expect(adminAbility.can(admin, "update", userANew)).toBe(true);
 });
 
-test("Object condition", () => {
+test("Object partial conditions", () => {
   const createAbilityForUser = (user: User) => {
     const ability = new Ability<Subjects, Actions>();
 
     ability.allow(User, "update", User, { name: user.name });
+
+    ability.allow(User, "update", Product, { seller: { name: user.name }});
 
     return ability;
   };
 
   const userA = new User("A");
   const userB = new User("B");
+
+  // Test out shallow partial check
 
   const userAAbility = createAbilityForUser(userA);
   const userBAbility = createAbilityForUser(userB);
@@ -258,6 +262,16 @@ test("Object condition", () => {
   expect(userAAbility.can(userA, "update", userB)).toBe(false);
   expect(userBAbility.can(userB, "update", userA)).toBe(false);
   expect(userBAbility.can(userB, "update", userB)).toBe(true);
+
+  // Test out deep partial check
+
+  const product1 = new Product(userA);
+  const product2 = new Product(userB);
+
+  expect(userAAbility.can(userA, "update", product1)).toBe(true);
+  expect(userAAbility.can(userA, "update", product2)).toBe(false);
+  expect(userBAbility.can(userB, "update", product1)).toBe(false);
+  expect(userBAbility.can(userB, "update", product2)).toBe(true);
 });
 
 test("Chain conditions", () => {

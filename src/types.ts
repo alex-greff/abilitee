@@ -1,3 +1,7 @@
+export type DeepPartial<T> = {
+  [P in keyof T]?: DeepPartial<T[P]>;
+};
+
 export type ConstructorTypeOf<M> = { new (...args: any[]): M };
 export type IsConstructorFunc<T, Y = true, N = false> = T extends {
   new (): any;
@@ -21,7 +25,7 @@ export type InstanceOfFn<P, M> = (
   model: ConstructorTypeOf<M>
 ) => boolean;
 
-export type TargetPartial<T> = Partial<T>;
+export type TargetPartial<T> = DeepPartial<T>;
 
 export type ModelInputType<M> = ConstructorTypeOf<M>;
 export type ActionInputType<A> = A | A[];
