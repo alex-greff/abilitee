@@ -44,9 +44,7 @@ const createAbilityForUser = (user: User) => {
   ability.allow(User, "read", User);
 
   // Users can only update and delete themselves
-  ability.allow(User, ["update", "delete"], User, (performer, target) => {
-    return performer.name === target.name;
-  });
+  ability.allow(User, ["update", "delete"], User, { name: user.name });
 
   // Users can create new products
   ability.allow(User, "create", Product);
@@ -65,6 +63,12 @@ const createAbilityForUser = (user: User) => {
   // Users can update and delete their own products
   ability.allow(User, ["update", "delete"], Product, (user, product) => {
     return user.name === product.seller.name;
+  });
+
+
+  // Users cannot update their own roles
+  ability.disallow(User, "update", "User", (performer, target) => {
+    return performer.type !== target.type;
   });
 
   // Admin can manage everything
@@ -97,7 +101,6 @@ const adminAbility = createAbilityForUser(admin);
 const managerAbility = createAbilityForUser(manager);
 const userAAbility = createAbilityForUser(userA);
 const userBAbility = createAbilityForUser(userB);
-
 
 // --- Check some abilities ---
 
@@ -132,6 +135,17 @@ managerAbility.can(manager, "read", product3) // => true
 // However, only admin can delete user A
 adminAbility.can(admin, "delete", userA); // => true
 managerAbility.can(manager, "delete", userA) // => false
+
+const userANew = new User("A", "admin");
+
+// User A tries to change themself to admin
+userAAbility.can(userA, "update", userANew); // => false
+
+// User B tries to change user A to admin
+userBAbility.can(userB, "update", userANew); // => false
+
+// Admin promotes user B to admin
+adminAbility.can(admin, "update", userANew); // => true
 ```
 
 ## API
@@ -142,6 +156,14 @@ managerAbility.can(manager, "delete", userA) // => false
     * `allow(model, action, target, condition?): void`
       * Description: Sets up an allow relation between `model`, `action`, 
       and `target`. You can think of it as "`<model>` can `<action>` `<target>`"
+      * Parameters: 
+        * `model: Class`
+        * `action: string | string[]`
+        * `target: Class`
+        * `condition: ConditionFunction or Partial<target>`
+    * `disallow(model, action, target, condition?): void`
+      * Description: Sets up a disallow relation between `model`, `action`, 
+      and `target`. You can think of it as "`<model>` cannot `<action>` `<target>`"
       * Parameters: 
         * `model: Class`
         * `action: string | string[]`
