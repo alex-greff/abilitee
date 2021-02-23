@@ -4,9 +4,12 @@ interface AbilityOptions<S, A> {
 }
 export declare class Ability<S extends BaseSubjects, A extends BaseActions> {
     private abilities;
+    private inabilities;
     private instanceOf;
     constructor(options?: Partial<AbilityOptions<S, A>>);
     allow<M extends S, T extends S>(model: ModelInputType<M>, actions: ActionInputType<A> | ManageKey, targets: TargetInputType<T> | AllKey, condition?: ConditionInputType<M, T>): void;
+    disallow<M extends S, T extends S>(model: ModelInputType<M>, actions: ActionInputType<A> | ManageKey, targets: TargetInputType<T> | AllKey, condition?: ConditionInputType<M, T>): void;
+    private filterAbilityList;
     can<P extends S, T extends S>(performer: P, action: ActionInputType<A>, target: T | ConstructorTypeOf<T>): boolean;
     cannot<P extends S, T extends S>(performer: P, action: ActionInputType<A>, target: T | ConstructorTypeOf<T>): boolean;
 }

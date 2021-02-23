@@ -1,3 +1,6 @@
+export declare type DeepPartial<T> = {
+    [P in keyof T]?: DeepPartial<T[P]>;
+};
 export declare type ConstructorTypeOf<M> = {
     new (...args: any[]): M;
 };
@@ -13,7 +16,7 @@ export declare type AllKey = "$all";
 export declare type ManageKey = "$manage";
 export declare type ConditionFn<P, T> = (performer: P, target: T) => boolean;
 export declare type InstanceOfFn<P, M> = (performer: P | ConstructorTypeOf<P>, model: ConstructorTypeOf<M>) => boolean;
-export declare type TargetPartial<T> = Partial<T>;
+export declare type TargetPartial<T> = DeepPartial<T>;
 export declare type ModelInputType<M> = ConstructorTypeOf<M>;
 export declare type ActionInputType<A> = A | A[];
 export declare type TargetInputType<T> = ConstructorTypeOf<T>;

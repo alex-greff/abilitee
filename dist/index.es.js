@@ -53,16 +53,25 @@ var get = function (obj, key) {
 /**
  * Returns true if the `partial` object is partially equal to the `target`
  * object (i.e. every key in `partial` exists on `target` and are equal to
- * each other).
+ * each other). Does a deep search of the object if deep is enabled.
  */
-var isPartiallyEqual = function (target, partial) {
-    return Object.keys(partial).every(function (key) { return get(target, key) === partial[key]; });
+var isPartiallyEqual = function (target, partial, deep) {
+    if (deep === void 0) { deep = true; }
+    if (!deep)
+        return Object.keys(partial).every(function (key) { return get(target, key) === partial[key]; });
+    return Object.keys(partial).every(function (key) {
+        var targetVal = get(target, key);
+        if (targetVal !== undefined && isObject(partial[key])) {
+            return isPartiallyEqual(targetVal, partial[key]);
+        }
+        return targetVal === partial[key];
+    });
 };
 /**
  * Creates a condition function from a target object partial.
  */
 var createConditionFn = function (partial) {
-    return function (performer, target) { return isPartiallyEqual(target, partial); };
+    return function (performer, target) { return isPartiallyEqual(target, partial, true); };
 };
 /**
  * Checks if the given function is a constructor function (i.e. a class type).
@@ -89,6 +98,7 @@ var defaultInstanceOfFn = function (instance, model) {
 var Ability = /** @class */ (function () {
     function Ability(options) {
         this.abilities = [];
+        this.inabilities = [];
         this.instanceOf = (options === null || options === void 0 ? void 0 : options.instanceOf) || defaultInstanceOfFn;
     }
     Ability.prototype.allow = function (model, actions, targets, condition) {
@@ -107,9 +117,25 @@ var Ability = /** @class */ (function () {
             });
         });
     };
-    Ability.prototype.can = function (performer, action, target) {
+    Ability.prototype.disallow = function (model, actions, targets, condition) {
         var _this = this;
-        return (this.abilities
+        var conditionFn = toConditionFunction(condition);
+        var actionsArr = Array.isArray(actions) ? actions : [actions];
+        var targetsArr = Array.isArray(targets) ? targets : [targets];
+        actionsArr.forEach(function (action) {
+            targetsArr.forEach(function (target) {
+                _this.inabilities.push({
+                    model: model,
+                    action: action,
+                    target: target,
+                    condition: conditionFn,
+                });
+            });
+        });
+    };
+    Ability.prototype.filterAbilityList = function (abilityList, performer, action, target) {
+        var _this = this;
+        return (abilityList
             // Check performer is instance of the model
             .filter(function (ability) { return _this.instanceOf(performer, ability.model); })
             // Check the target matches or target is the right instance
@@ -130,7 +156,14 @@ var Ability = /** @class */ (function () {
             else if (ability.condition)
                 return ability.condition(performer, target);
             return true;
-        }).length > 0);
+        }));
+    };
+    Ability.prototype.can = function (performer, action, target) {
+        var hasMatchingAbilities = this.filterAbilityList(this.abilities, performer, action, target).length >
+            0;
+        var hasMatchingInabilities = this.filterAbilityList(this.inabilities, performer, action, target)
+            .length > 0;
+        return hasMatchingAbilities && !hasMatchingInabilities;
     };
     Ability.prototype.cannot = function (performer, action, target) {
         return !this.can(performer, action, target);
