@@ -27,24 +27,33 @@ class Product {
 
 // --- Subjects and actions that are available (for intellisense) ---
 
-export type Subjects =
+type Subjects =
   | User
   | Product
 ;
 
-export type Actions = "read" | "create" |  "update" | "delete";
+type Actions = "read" | "create" |  "update" | "delete";
+
+type Scopes = "role";
 
 
 // --- Ability factory function ---
 
 const createAbilityForUser = (user: User) => {
-  const ability = new Ability<Subjects, Actions>();
+  const ability = new Ability<Subjects, Actions, Scopes>();
 
   // Users can view users
   ability.allow(User, "read", User);
 
   // Users can only update and delete themselves
   ability.allow(User, ["update", "delete"], User, { name: user.name });
+  // Note: this is equivalent to
+  // ability.allow(User, ["update", "delete"], User, (performer, target) => {
+  //   return performer.name === target.name;
+  // });
+
+  // Users cannot update their role
+  ability.disallow(User, "update", User, "role");
 
   // Users can create new products
   ability.allow(User, "create", Product);
@@ -63,12 +72,6 @@ const createAbilityForUser = (user: User) => {
   // Users can update and delete their own products
   ability.allow(User, ["update", "delete"], Product, (user, product) => {
     return user.name === product.seller.name;
-  });
-
-
-  // Users cannot update their own roles
-  ability.disallow(User, "update", "User", (performer, target) => {
-    return performer.type !== target.type;
   });
 
   // Admin can manage everything
@@ -136,16 +139,14 @@ managerAbility.can(manager, "read", product3) // => true
 adminAbility.can(admin, "delete", userA); // => true
 managerAbility.can(manager, "delete", userA) // => false
 
-const userANew = new User("A", "admin");
+// User A tries to promote themself
+userAAbility.can(userA, "update", userA, "role"); // => false
 
-// User A tries to change themself to admin
-userAAbility.can(userA, "update", userANew); // => false
+// User B tries to promote user A
+userBAbility.can(userB, "update", userA, "role"); // => false
 
-// User B tries to change user A to admin
-userBAbility.can(userB, "update", userANew); // => false
-
-// Admin promotes user B to admin
-adminAbility.can(admin, "update", userANew); // => true
+// Admin promotes user A
+adminAbility.can(admin, "update", userA, "role"); // => true
 ```
 
 ## API
@@ -154,35 +155,41 @@ adminAbility.can(admin, "update", userANew); // => true
   * `constructor(options?)`
     * `options` (optional):
     * `allow(model, action, target, condition?): void`
+    * `allow(model, action, target, scopes, condition?): void`
       * Description: Sets up an allow relation between `model`, `action`, 
       and `target`. You can think of it as "`<model>` can `<action>` `<target>`"
       * Parameters: 
         * `model: Class`
         * `action: string | string[]`
         * `target: Class`
+        * `scope: string | string[] = "$global`
         * `condition: ConditionFunction or DeepPartial<target>`
     * `disallow(model, action, target, condition?): void`
+    * `disallow(model, action, target, scopes, condition?): void`
       * Description: Sets up a disallow relation between `model`, `action`, 
       and `target`. You can think of it as "`<model>` cannot `<action>` `<target>`"
       * Parameters: 
         * `model: Class`
         * `action: string | string[]`
         * `target: Class`
+        * `scope: string | string[] = "$global`
         * `condition: ConditionFunction or DeepPartial<target>`
-    * `can(performer, action, target): boolean`
+    * `can(performer, action, target, scope?): boolean`
       * Description: Returns true if the given relation between `model`, 
       `action` and `target` is allowed.
       * Parameters: 
         * `performer: Class instance`
         * `action: string`
         * `target: Class or class instance`
-    * `cannot(performer, action, target): boolean`
+        * `scope: string = "$global"`
+    * `cannot(performer, action, target, scope?): boolean`
       * Description: Returns true if the given relation between `model`, 
       `action` and `target` is not allowed.
       * Parameters: 
         * `performer: Class instance`
         * `action: string`
         * `target: Class or class instance`
+        * `scope: string = "$global"`
 
 `Ability` options:
   * `instanceOf: (performer, model) => boolean`: overrides the default 

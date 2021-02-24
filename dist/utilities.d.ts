@@ -1,4 +1,5 @@
 import { ConditionFn, ConditionInputType, DeepPartial } from "./types";
+export declare const isString: (fn: any) => fn is string;
 /**
  * Checks if the given function is a constructor function (i.e. a class type).
  */

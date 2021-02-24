@@ -15,9 +15,11 @@ export type StripConstructors<T> = Pick<
 
 export type BaseSubjects = object;
 export type BaseActions = string;
+export type BaseScope = string;
 
 export type AllKey = "$all";
 export type ManageKey = "$manage";
+export type GlobalScope = "$global";
 
 export type ConditionFn<P, T> = (performer: P, target: T) => boolean;
 export type InstanceOfFn<P, M> = (
@@ -28,17 +30,20 @@ export type InstanceOfFn<P, M> = (
 export type TargetPartial<T> = DeepPartial<T>;
 
 export type ModelInputType<M> = ConstructorTypeOf<M>;
-export type ActionInputType<A> = A | A[];
-export type TargetInputType<T> = ConstructorTypeOf<T>;
+export type ActionInputType<A> = (A | ManageKey) | (A | ManageKey)[];
+export type TargetInputType<T> = ConstructorTypeOf<T> | AllKey;
+export type ScopeInputType<C> = (C | GlobalScope) | (C | GlobalScope)[];
 export type ConditionInputType<M, T> = ConditionFn<M, T> | TargetPartial<T>;
 
 export interface AbilityItem<
   M extends BaseSubjects,
   A extends BaseActions,
-  T extends BaseSubjects
+  T extends BaseSubjects,
+  C extends BaseScope
 > {
   model: ModelInputType<M>;
-  action: ActionInputType<A> | ManageKey;
+  action: A | ManageKey;
   target: TargetInputType<T> | AllKey;
+  scope: C | GlobalScope;
   condition: ConditionFn<M, T> | undefined;
 }
