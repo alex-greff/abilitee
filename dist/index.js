@@ -49,7 +49,7 @@ var ClassConstructorTypeError = /** @class */ (function (_super) {
     return ClassConstructorTypeError;
 }(Error));
 
-var isString = function (fn) { return typeof fn === 'string'; };
+var isString = function (fn) { return typeof fn === "string"; };
 /**
  * Gets a parameter on `obj`, if it is a function it evaluates it.
  */
