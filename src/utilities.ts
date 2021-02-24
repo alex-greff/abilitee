@@ -6,6 +6,8 @@ import {
   TargetPartial,
 } from "./types";
 
+export const isString = (fn: any): fn is string => typeof fn === "string";
+
 /**
  * Gets a parameter on `obj`, if it is a function it evaluates it.
  */

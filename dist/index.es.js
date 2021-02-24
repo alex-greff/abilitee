@@ -41,6 +41,7 @@ var ClassConstructorTypeError = /** @class */ (function (_super) {
     return ClassConstructorTypeError;
 }(Error));
 
+var isString = function (fn) { return typeof fn === 'string'; };
 /**
  * Gets a parameter on `obj`, if it is a function it evaluates it.
  */
@@ -53,16 +54,25 @@ var get = function (obj, key) {
 /**
  * Returns true if the `partial` object is partially equal to the `target`
  * object (i.e. every key in `partial` exists on `target` and are equal to
- * each other).
+ * each other). Does a deep search of the object if deep is enabled.
  */
-var isPartiallyEqual = function (target, partial) {
-    return Object.keys(partial).every(function (key) { return get(target, key) === partial[key]; });
+var isPartiallyEqual = function (target, partial, deep) {
+    if (deep === void 0) { deep = true; }
+    if (!deep)
+        return Object.keys(partial).every(function (key) { return get(target, key) === partial[key]; });
+    return Object.keys(partial).every(function (key) {
+        var targetVal = get(target, key);
+        if (targetVal !== undefined && isObject(partial[key])) {
+            return isPartiallyEqual(targetVal, partial[key]);
+        }
+        return targetVal === partial[key];
+    });
 };
 /**
  * Creates a condition function from a target object partial.
  */
 var createConditionFn = function (partial) {
-    return function (performer, target) { return isPartiallyEqual(target, partial); };
+    return function (performer, target) { return isPartiallyEqual(target, partial, true); };
 };
 /**
  * Checks if the given function is a constructor function (i.e. a class type).
@@ -89,27 +99,51 @@ var defaultInstanceOfFn = function (instance, model) {
 var Ability = /** @class */ (function () {
     function Ability(options) {
         this.abilities = [];
+        this.inabilities = [];
         this.instanceOf = (options === null || options === void 0 ? void 0 : options.instanceOf) || defaultInstanceOfFn;
     }
-    Ability.prototype.allow = function (model, actions, targets, condition) {
-        var _this = this;
+    Ability.prototype.addToAbilityList = function (abilityList, model, actions, targets, scopes, condition) {
+        scopes = scopes === undefined ? "$global" : scopes;
         var conditionFn = toConditionFunction(condition);
         var actionsArr = Array.isArray(actions) ? actions : [actions];
         var targetsArr = Array.isArray(targets) ? targets : [targets];
+        var scopeArr = Array.isArray(scopes) ? scopes : [scopes];
         actionsArr.forEach(function (action) {
             targetsArr.forEach(function (target) {
-                _this.abilities.push({
-                    model: model,
-                    action: action,
-                    target: target,
-                    condition: conditionFn,
+                scopeArr.forEach(function (scope) {
+                    abilityList.push({
+                        model: model,
+                        action: action,
+                        target: target,
+                        scope: scope,
+                        condition: conditionFn,
+                    });
                 });
             });
         });
     };
-    Ability.prototype.can = function (performer, action, target) {
+    Ability.prototype.allow = function (model, actions, targets, scopes, condition) {
+        // Overload handling
+        if (!(isString(scopes) || Array.isArray(scopes)) &&
+            condition === undefined) {
+            condition = scopes;
+            scopes = undefined;
+        }
+        this.addToAbilityList(this.abilities, model, actions, targets, scopes, condition);
+    };
+    Ability.prototype.disallow = function (model, actions, targets, scopes, condition) {
+        // Overload handling
+        if (!(isString(scopes) || Array.isArray(scopes)) &&
+            condition === undefined) {
+            condition = scopes;
+            scopes = undefined;
+        }
+        this.addToAbilityList(this.inabilities, model, actions, targets, scopes, condition);
+    };
+    Ability.prototype.filterAbilityList = function (abilityList, performer, action, target, scope) {
         var _this = this;
-        return (this.abilities
+        var hasManageAbility = false;
+        var filteredList = abilityList
             // Check performer is instance of the model
             .filter(function (ability) { return _this.instanceOf(performer, ability.model); })
             // Check the target matches or target is the right instance
@@ -118,8 +152,14 @@ var Ability = /** @class */ (function () {
                 target === ability.target ||
                 _this.instanceOf(target, ability.target));
         })
+            // Check scope matches
+            .filter(function (ability) {
+            // Ignore scope if target is $all
+            return ability.target === "$all" || ability.scope === scope;
+        })
             // Check the action matches
             .filter(function (ability) {
+            hasManageAbility = hasManageAbility || ability.action === "$manage";
             return ability.action === "$manage" || action === ability.action;
         })
             // Check the condition matches, if there is one
@@ -130,10 +170,21 @@ var Ability = /** @class */ (function () {
             else if (ability.condition)
                 return ability.condition(performer, target);
             return true;
-        }).length > 0);
+        });
+        return [filteredList, hasManageAbility];
     };
-    Ability.prototype.cannot = function (performer, action, target) {
-        return !this.can(performer, action, target);
+    Ability.prototype.can = function (performer, action, target, scope) {
+        if (scope === void 0) { scope = "$global"; }
+        var _a = this.filterAbilityList(this.abilities, performer, action, target, scope), matchingAbilities = _a[0], hasManageAbility = _a[1];
+        var _b = this.filterAbilityList(this.inabilities, performer, action, target, scope), matchingInabilities = _b[0]; _b[1];
+        var hasMatchingAbilities = matchingAbilities.length > 0;
+        var hasMatchingInabilities = matchingInabilities.length > 0;
+        // Automatically accept if one of the abilities has a "$manage" action
+        return (hasManageAbility || (hasMatchingAbilities && !hasMatchingInabilities));
+    };
+    Ability.prototype.cannot = function (performer, action, target, scope) {
+        if (scope === void 0) { scope = "$global"; }
+        return !this.can(performer, action, target, scope);
     };
     return Ability;
 }());

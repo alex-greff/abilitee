@@ -1,6 +1,6 @@
 import { Ability } from "../ability";
 import { And, Not, Or } from "../conditions";
-import { Actions, Product, Subjects, User } from "./mockTypes";
+import { Actions, Product, Scopes, Subjects, User } from "./mockTypes";
 
 test("Basic ability conditions", () => {
   const createAbilityForUser = (user: User) => {
@@ -245,7 +245,7 @@ test("Object partial conditions", () => {
 
     ability.allow(User, "update", User, { name: user.name });
 
-    ability.allow(User, "update", Product, { seller: { name: user.name }});
+    ability.allow(User, "update", Product, { seller: { name: user.name } });
 
     return ability;
   };
@@ -355,4 +355,40 @@ test("Condition joining functions", () => {
   expect(nested1(userA, userB)).toBe(false);
   expect(nested1(userB, userA)).toBe(true);
   expect(nested1(userB, userB)).toBe(false);
+});
+
+test("Scopes", () => {
+  const createAbilityForUser = (user: User) => {
+    const ability = new Ability<Subjects, Actions, Scopes>();
+
+    ability.allow(User, "update", User, { name: user.name });
+    ability.disallow(User, "update", User, "role");
+    ability.allow(User, "update", User, "name", { name: user.name });
+
+    // Admin can manage everything
+    if (user.type === "admin") {
+      ability.allow(User, "$manage", "$all");
+    }
+
+    return ability;
+  };
+
+  const admin = new User("admin", "admin");
+  const userA = new User("A");
+  const userB = new User("B");
+
+  const adminAbility = createAbilityForUser(admin);
+  const userAAbility = createAbilityForUser(userA);
+
+  expect(userAAbility.can(userA, "update", userA)).toBe(true);
+  expect(userAAbility.can(userA, "update", userA, "role")).toBe(false);
+  expect(userAAbility.can(userA, "update", userB)).toBe(false);
+  expect(userAAbility.can(userA, "update", userB, "role")).toBe(false);
+  expect(userAAbility.can(userA, "update", userA, "name")).toBe(true);
+  expect(userAAbility.can(userA, "update", userB, "name")).toBe(false);
+
+  expect(adminAbility.can(admin, "update", userA, "role")).toBe(true);
+  expect(adminAbility.can(admin, "update", userB, "role")).toBe(true);
+  expect(adminAbility.can(admin, "update", userA, "name")).toBe(true);
+  expect(adminAbility.can(admin, "update", userB, "name")).toBe(true);
 });

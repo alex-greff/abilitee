@@ -6,11 +6,10 @@ export class User {
 
 export class Product {
   constructor(public seller: User, public isPublic: boolean = true) {}
-} 
+}
 
-export type Subjects =
-  | User
-  | Product
-;
+export type Subjects = User | Product;
 
-export type Actions = "read" | "create" |  "update" | "delete";
+export type Actions = "read" | "create" | "update" | "delete";
+
+export type Scopes = "role" | "name";
