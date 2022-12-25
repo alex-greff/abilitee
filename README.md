@@ -210,6 +210,6 @@ adminAbility.can(admin, "update", userA, "role"); // => true
   * Description: returns a condition function that evaluates true if all of the
   given conditions return true.
 
-`Or(condition): ConditionFunction`
+`Not(condition): ConditionFunction`
   * Description: returns a condition function that negates the result of the
   given condition.
